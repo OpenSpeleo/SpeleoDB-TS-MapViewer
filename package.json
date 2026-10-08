@@ -1,0 +1,68 @@
+{
+  "name": "@speleodb/map-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared SpeleoDB MapLibre viewer specifications and assets",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "bun": "1.4.2"
+  },
+  "files": [
+    "src",
+    "assets",
+    "LICENSE",
+    "README.md",
+    "docs"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./assets/*": "./assets/*",
+    "./package.json": "./package.json",
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:dependencies": "bun scripts/check-core-pin.mjs",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix --max-warnings=0",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "check:lockfile": "bun run check:dependencies && bun scripts/check-lockfile.mjs",
+    "build": "bun build ./src/*.ts --target=browser --outdir=dist"
+  },
+  "devDependencies": {
+    "@types/geojson": "7946.0.16",
+    "@types/node": "26.6.4",
+    "typescript": "~6.0.3",
+    "vitest": "5.0.3",
+    "@speleodb/map-core": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore.git#6ce42621c441b25903c23ce75533efc1ae6cf79f",
+    "maplibre-gl": "6.10.0",
+    "@maplibre/maplibre-gl-style-spec": "26.4.4",
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "globals": "17.13.0",
+    "typescript-eslint": "8.71.1",
+    "prettier": "3.9.9"
+  },
+  "peerDependencies": {
+    "@speleodb/map-core": "^0.1.0",
+    "maplibre-gl": "6.10.0"
+  },
+  "packageManager": "bun@1.4.2",
+  "trustedDependencies": [
+    "esbuild"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapViewer.git"
+  }
+}

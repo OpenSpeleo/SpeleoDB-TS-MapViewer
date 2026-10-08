@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "customConditions": ["speleodb-source"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.json",
+    "tests/**/*.ts",
+    "tests/**/*.json",
+    "vitest.config.ts"
+  ]
+}
