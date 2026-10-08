@@ -44,7 +44,7 @@
     "@types/node": "26.6.4",
     "typescript": "~6.0.3",
     "vitest": "5.0.3",
-    "@speleodb/map-core": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore.git#6ce42621c441b25903c23ce75533efc1ae6cf79f",
+    "@speleodb/map-core": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore.git#cb1cb131ae10dc57727ddf671f54df3c57bbd019",
     "maplibre-gl": "6.10.0",
     "@maplibre/maplibre-gl-style-spec": "26.4.4",
     "@eslint/js": "9.39.5",

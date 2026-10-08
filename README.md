@@ -1,15 +1,18 @@
 # @speleodb/map-viewer
 
-Shared MapLibre expressions, layer specifications, and marker assets for the
-SpeleoDB web and mobile applications. The applications own map creation, source
-registration, renderer lifecycle, network access, and UI state. This package has
-no React, Capacitor, Django, or application singleton dependency.
+Shared MapLibre expressions, layer specifications, globe atmosphere, and marker
+assets for the SpeleoDB web and mobile applications. The applications own map
+creation, source registration, renderer lifecycle, network access, and UI state.
+This package has no React, Capacitor, Django, or application singleton
+dependency.
 
 Import expression/layer builders from `@speleodb/map-viewer`, icon URLs from
 `@speleodb/map-viewer/icons`, and assets through
 `@speleodb/map-viewer/assets/*`. See
 [rendering contracts and ownership](docs/rendering.md) for the API design and
 behavioral boundaries. Core domain calculations belong to `@speleodb/map-core`.
+Attach the shared dark space, stars and white globe halo with
+`attachGlobeAtmosphere(map)` and call its disposer when the map owner unmounts.
 Both applications supply MapLibre 6.10.0 and core through explicit dependencies;
 this package declares compatible peers and does not bundle a second renderer.
 
