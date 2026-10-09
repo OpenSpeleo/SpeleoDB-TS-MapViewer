@@ -53,3 +53,16 @@ Source, assets, and the AGPL-3.0 license travel together. Preserve the original
 source comments and asset notices. Update dependency pins only to commits that
 are reachable from the public repositories, and regenerate the standalone and
 integration locks together.
+
+## Locking inside the monorepo
+
+Run `bun run lock` here to resolve only this package's standalone `bun.lock`.
+Use `bun run lock --upgrade` to refresh direct and transitive resolutions within
+the existing manifest constraints. Both delegate to the monorepo's shared
+`utilities/bun-lock/lock.mjs`, using external temporary staging without
+installing dependencies or running lifecycle scripts. Only the child lock is
+published after success; refresh the root integration lock separately.
+
+This convenience command requires the monorepo. In a standalone clone, use
+`bun install --lockfile-only --ignore-scripts`. Existing standalone lock checks,
+builds and CI remain independent of the shared utility.

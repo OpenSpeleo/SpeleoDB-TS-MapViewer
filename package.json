@@ -28,6 +28,7 @@
     }
   },
   "scripts": {
+    "lock": "bun scripts/lock.mjs",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -39,12 +40,14 @@
     "check:lockfile": "bun run check:dependencies && bun scripts/check-lockfile.mjs",
     "build": "bun build ./src/*.ts --target=browser --outdir=dist"
   },
+  "dependencies": {
+    "@speleodb/map-core": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore.git#4b846912ccc25319ac200c2587f98ebce88d3188"
+  },
   "devDependencies": {
     "@types/geojson": "7946.0.16",
     "@types/node": "26.6.4",
     "typescript": "~6.0.3",
     "vitest": "5.0.3",
-    "@speleodb/map-core": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore.git#cb1cb131ae10dc57727ddf671f54df3c57bbd019",
     "maplibre-gl": "6.10.0",
     "@maplibre/maplibre-gl-style-spec": "26.4.4",
     "@eslint/js": "9.39.5",
@@ -54,7 +57,6 @@
     "prettier": "3.9.9"
   },
   "peerDependencies": {
-    "@speleodb/map-core": "^0.1.0",
     "maplibre-gl": "6.10.0"
   },
   "packageManager": "bun@1.4.2",
