@@ -5,7 +5,7 @@
     "": {
       "name": "@speleodb/map-viewer",
       "dependencies": {
-        "@speleodb/map-core": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore.git#4b846912ccc25319ac200c2587f98ebce88d3188",
+        "@speleodb/map-core": ">=0.1.0 <1.0.0",
       },
       "devDependencies": {
         "@eslint/js": "9.39.5",
@@ -112,7 +112,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@speleodb/map-core": ["@speleodb/map-core@github:OpenSpeleo/SpeleoDB-TS-MapCore#4b84691", { "dependencies": { "@types/geojson": "7946.0.16" } }, "OpenSpeleo-SpeleoDB-TS-MapCore-4b84691", "sha512-deogYEreku7w//HZdn8LJX4Dz7zyLGCmjMaJoDdERfiTEYQqjwL8pQl2KLAUwJWU8d6qMNCDIi+PSc7b1j5sqw=="],
+    "@speleodb/map-core": ["@speleodb/map-core@0.1.0", "", { "dependencies": { "@types/geojson": "7946.0.16" } }, "sha512-j8eBHscldlXVj+AeNnz562QIsaQKf0xjOuNxHqy7cZ6aIwxXCaPySePsnrtMMsRU7xDspM6hp5qxUxLQ1fME7A=="],
 
     "@types/chai": ["@types/chai@5.2.3", "", { "dependencies": { "@types/deep-eql": "*", "assertion-error": "^2.0.1" } }, "sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA=="],
 

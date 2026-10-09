@@ -40,19 +40,18 @@ condition remains in the development configuration only for compatibility with
 older core Git pins. `bun run build` smoke-tests browser compilation with Bun;
 its disposable `dist/` output is ignored and excluded from the package.
 
-The package is distributed from
-[SpeleoDB-TS-MapViewer](https://github.com/OpenSpeleo/SpeleoDB-TS-MapViewer)
-through full commit SHA dependencies, **never published to npm**. The manifest
-intentionally remains private. There are no automatic install, preparation, or
-build lifecycle hooks. Its core development dependency pins a published
-[SpeleoDB-TS-MapCore](https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore) commit.
-Standalone CI checks the Git pin before its frozen Bun install; root integration
-projects the dependency to the live local core workspace before resolution.
+The package is configured for public npm publication as `@speleodb/map-viewer`.
+Its source repository is
+[SpeleoDB-TS-MapViewer](https://github.com/OpenSpeleo/SpeleoDB-TS-MapViewer).
+There are no automatic install, preparation, or build lifecycle hooks. Its
+`@speleodb/map-core` runtime dependency accepts npm versions `>=0.1.0 <1.0.0`.
+Standalone CI uses the registry version recorded in the frozen Bun lockfile;
+root integration projects the dependency to the live local core workspace before
+resolution.
 
 Source, assets, and the AGPL-3.0 license travel together. Preserve the original
-source comments and asset notices. Update dependency pins only to commits that
-are reachable from the public repositories, and regenerate the standalone and
-integration locks together.
+source comments and asset notices. Regenerate the standalone and integration
+locks together when updating dependencies.
 
 ## Locking inside the monorepo
 

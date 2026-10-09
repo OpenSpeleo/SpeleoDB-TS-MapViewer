@@ -97,7 +97,7 @@ repos:
         language: system
         files: >-
           (?x)^(package\.json|bun\.lock|bunfig\.toml|\.bun-version|
-          scripts/check-(lockfile|core-pin)\.mjs)$
+          scripts/check-lockfile\.mjs)$
         pass_filenames: false
 
   # -------------------------

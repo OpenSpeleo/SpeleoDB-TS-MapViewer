@@ -1,7 +1,10 @@
 {
   "name": "@speleodb/map-viewer",
   "version": "0.1.0",
-  "private": true,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "description": "Shared SpeleoDB MapLibre viewer specifications and assets",
   "type": "module",
   "license": "AGPL-3.0-only",
@@ -32,16 +35,15 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:dependencies": "bun scripts/check-core-pin.mjs",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix --max-warnings=0",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "check:lockfile": "bun run check:dependencies && bun scripts/check-lockfile.mjs",
+    "check:lockfile": "bun scripts/check-lockfile.mjs",
     "build": "bun build ./src/*.ts --target=browser --outdir=dist"
   },
   "dependencies": {
-    "@speleodb/map-core": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-MapCore.git#4b846912ccc25319ac200c2587f98ebce88d3188"
+    "@speleodb/map-core": ">=0.1.0 <1.0.0"
   },
   "devDependencies": {
     "@types/geojson": "7946.0.16",
