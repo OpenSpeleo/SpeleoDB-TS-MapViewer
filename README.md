@@ -13,8 +13,25 @@ Import expression/layer builders from `@speleodb/map-viewer`, icon URLs from
 behavioral boundaries. Core domain calculations belong to `@speleodb/map-core`.
 Attach the shared dark space, stars and white globe halo with
 `attachGlobeAtmosphere(map)` and call its disposer when the map owner unmounts.
-Both applications supply MapLibre 6.10.0 and core through explicit dependencies;
-this package declares compatible peers and does not bundle a second renderer.
+Mobile supplies MapLibre 6.10.0 and web supplies 6.14.0 through explicit
+dependencies. This package supports MapLibre `>=6.10.0 <7.0.0` and does not
+bundle a second renderer.
+
+GIS alias points from `@speleodb/map-core/geometry-labels` are rendered with
+`createGeometryLabelLayer`. It centers polygon labels and places horizontal line
+labels just above their midpoint. Consumers pass their visibility filter and
+persist the label preference.
+
+For selectable landmark artwork, import `LANDMARK_ICON_URLS` and
+`createLandmarkIconRegistry` from `@speleodb/map-viewer/landmark-icons`. Create
+one registry per map, call `prepare(featureCollection)` when landmark data
+changes, and pass `getAvailableImageIds()` to `createLandmarkLayers` as
+`availableIconIds`. Its change callback refreshes those specifications after
+artwork loads or the style changes; it must not recursively call `prepare`. Call
+`dispose()` when the map owner unmounts. Icon choices use the shared SVG URLs as
+CSS masks colored with the landmark collection color. All five choices,
+including the default triangle, use the same image sizing and contrast halo. The
+original triangle glyph remains a fallback while artwork is unavailable.
 
 ## Development and distribution
 
@@ -44,10 +61,16 @@ The package is configured for public npm publication as `@speleodb/map-viewer`.
 Its source repository is
 [SpeleoDB-TS-MapViewer](https://github.com/OpenSpeleo/SpeleoDB-TS-MapViewer).
 There are no automatic install, preparation, or build lifecycle hooks. Its
-`@speleodb/map-core` runtime dependency accepts npm versions `>=0.1.0 <1.0.0`.
+`@speleodb/map-core` runtime dependency accepts npm versions `>=0.2.0 <1.0.0`.
 Standalone CI uses the registry version recorded in the frozen Bun lockfile;
 root integration projects the dependency to the live local core workspace before
 resolution.
+
+The landmark icon additions require the corresponding map-core release. Before
+publishing them, raise this package's minimum core version and refresh its
+standalone lock after that core version is available. Applications then update
+their exact shared package pins and standalone locks. Workspace overrides alone
+do not establish compatibility with older published core versions.
 
 Source, assets, and the AGPL-3.0 license travel together. Preserve the original
 source comments and asset notices. Regenerate the standalone and integration

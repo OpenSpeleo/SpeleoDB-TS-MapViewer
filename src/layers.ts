@@ -12,6 +12,10 @@ import {
   stationTypeFilter,
   stationTypesFilter,
 } from "./expressions.js";
+import {
+  LANDMARK_ICON_CONTENT_SIZE,
+  landmarkIconImageExpression,
+} from "./landmark-style.js";
 
 type Color = DataDrivenPropertyValueSpecification<string>;
 type Size = DataDrivenPropertyValueSpecification<number>;
@@ -107,6 +111,7 @@ export interface LandmarkLayerOptions extends LabelOptions {
   labelId: string;
   color: Color;
   haloColor: Color;
+  availableIconIds?: readonly string[];
 }
 
 export function createLandmarkLayers(
@@ -124,8 +129,15 @@ export function createLandmarkLayers(
     haloColor,
     visible = true,
     filter,
+    availableIconIds = [],
   } = options;
   const visibility: Visibility = visible ? "visible" : "none";
+  const image = landmarkIconImageExpression();
+  const hasIcon: ExpressionSpecification = [
+    "in",
+    image,
+    ["literal", [...availableIconIds]],
+  ];
   return [
     {
       id: markerId,
@@ -135,11 +147,31 @@ export function createLandmarkLayers(
       minzoom: markerMinZoom,
       layout: {
         visibility,
-        "text-field": "▼",
+        "text-field": availableIconIds.length
+          ? ["case", hasIcon, "", "▼"]
+          : "▼",
         "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
         "text-size": markerSize,
         "text-allow-overlap": true,
         "text-ignore-placement": true,
+        ...(availableIconIds.length
+          ? {
+              "icon-image": [
+                "case",
+                hasIcon,
+                image,
+                "",
+              ] as ExpressionSpecification,
+              "icon-size": scaleSize(
+                markerSize,
+                1 / LANDMARK_ICON_CONTENT_SIZE,
+              ),
+              "icon-allow-overlap": true,
+              "icon-ignore-placement": true,
+              "icon-optional": true,
+              "text-optional": true,
+            }
+          : {}),
       },
       paint: {
         "text-color": color,
@@ -171,6 +203,86 @@ export function createLandmarkLayers(
       },
     },
   ];
+}
+
+/** Zoom expressions must remain at the top level of a layout size expression. */
+function scaleSize(size: Size, factor: number): Size {
+  if (typeof size === "number") return size * factor;
+  if (Array.isArray(size) && size[0] === "interpolate") {
+    return size.map((value, index) =>
+      index >= 4 && index % 2 === 0 ? ["*", value, factor] : value,
+    ) as ExpressionSpecification;
+  }
+  if (Array.isArray(size) && size[0] === "step") {
+    return size.map((value, index) =>
+      index >= 2 && index % 2 === 0 ? ["*", value, factor] : value,
+    ) as ExpressionSpecification;
+  }
+  return ["*", size, factor] as ExpressionSpecification;
+}
+
+export interface GeometryLabelLayerOptions {
+  sourceId: string;
+  layerId: string;
+  visible?: boolean;
+  filter?: ExpressionSpecification;
+  labelSize?: Size;
+}
+
+/** Label points are derived once in map-core; applications retain visibility gates. */
+export function createGeometryLabelLayer({
+  sourceId: source,
+  layerId: id,
+  visible = true,
+  filter,
+  labelSize = 13,
+}: GeometryLabelLayerOptions): SymbolLayerSpecification {
+  const isLine: ExpressionSpecification = [
+    "==",
+    ["get", "geometry_type"],
+    "LineString",
+  ];
+  return {
+    id,
+    source,
+    type: "symbol",
+    filter: combineFilters(filter, [
+      "!=",
+      ["coalesce", ["get", "alias"], ""],
+      "",
+    ]),
+    layout: {
+      visibility: visible ? "visible" : "none",
+      "symbol-placement": "point",
+      "text-field": ["get", "alias"],
+      "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+      "text-size": labelSize,
+      "text-anchor": ["case", isLine, "bottom", "center"],
+      "text-offset": [
+        "case",
+        isLine,
+        ["literal", [0, -0.2]],
+        ["literal", [0, 0]],
+      ],
+      "text-rotation-alignment": "viewport",
+      "text-pitch-alignment": "viewport",
+      // A 32-character alias fits on one line, including wide Unicode glyphs.
+      "text-max-width": 64,
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    },
+    paint: {
+      "text-color": ["to-color", ["get", "color"], "#94a3b8"],
+      "text-halo-color": [
+        "case",
+        ["==", ["downcase", ["string", ["get", "color"], ""]], "#ffffff"],
+        "#0f172a",
+        "#ffffff",
+      ],
+      "text-halo-width": 1.5,
+      "text-halo-blur": 0.5,
+    },
+  };
 }
 
 export interface SurfaceStationLayerOptions extends LabelOptions {

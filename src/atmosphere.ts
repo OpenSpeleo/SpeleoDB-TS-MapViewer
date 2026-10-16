@@ -8,6 +8,7 @@ import type {
 export interface GlobeAtmosphereMap {
   on(type: "style.load" | "remove", listener: () => void): unknown;
   off(type: "style.load" | "remove", listener: () => void): unknown;
+  getStyle(): unknown;
   isStyleLoaded(): boolean | void;
   getLayersOrder(): string[];
   getLayer(id: string): { type?: string } | undefined;
@@ -237,7 +238,8 @@ export function attachGlobeAtmosphere(
   };
   map.on("style.load", install);
   map.on("remove", removed);
-  if (map.isStyleLoaded()) install();
+  // isStyleLoaded warns when the map was created before its initial style.
+  if (map.getStyle() && map.isStyleLoaded()) install();
   return () => {
     if (disposed) return;
     detachListeners();

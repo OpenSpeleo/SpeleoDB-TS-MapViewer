@@ -17,6 +17,7 @@ function fixture(loaded = true) {
       listeners.get(type)?.add(callback);
     },
     off: (type, callback) => listeners.get(type)?.delete(callback),
+    getStyle: () => ({ version: 8, sources: {}, layers: [] }),
     isStyleLoaded: () => loaded,
     getLayersOrder: () => ["satellite", "roads", "labels"],
     getLayer: (id) =>
@@ -111,6 +112,20 @@ describe("globe atmosphere lifecycle", () => {
     expect(target.map.getSky()).toEqual({ "sky-color": "blue" });
     target.emit("style.load");
     expect(target.map.addLayer).toHaveBeenCalledTimes(2);
+  });
+
+  it("avoids the warning-producing readiness probe before the initial style exists", () => {
+    const target = fixture(false);
+    target.map.getStyle = () => undefined;
+    const readiness = vi.spyOn(target.map, "isStyleLoaded");
+    const dispose = attachGlobeAtmosphere(target.map);
+    expect(readiness).not.toHaveBeenCalled();
+    expect(target.map.addLayer).not.toHaveBeenCalled();
+    target.map.getStyle = () => ({ version: 8, sources: {}, layers: [] });
+    target.emit("style.load");
+    expect(target.map.addLayer).toHaveBeenCalledTimes(1);
+    dispose();
+    expect(target.map.removeLayer).toHaveBeenCalledTimes(1);
   });
 
   it("does not access destroyed map state on map.remove or later disposal", () => {
