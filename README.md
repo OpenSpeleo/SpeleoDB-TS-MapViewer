@@ -53,6 +53,16 @@ Source, assets, and the AGPL-3.0 license travel together. Preserve the original
 source comments and asset notices. Regenerate the standalone and integration
 locks together when updating dependencies.
 
+## npm releases
+
+A pushed `v<package.json version>` tag runs the full CI verification and then
+builds and publishes the package with npm trusted publishing. The publish job
+requires the tag to match the package version. Configure `@speleodb/map-viewer`
+on npmjs.com with a GitHub Actions trusted publisher for organization
+`OpenSpeleo`, repository `SpeleoDB-TS-MapViewer`, workflow filename `ci.yml`,
+environment name `publish`, label `github`, and permission to run `npm publish`.
+The job uses GitHub OIDC; no npm write token is needed.
+
 ## Locking inside the monorepo
 
 Run `bun run lock` here to resolve only this package's standalone `bun.lock`.
