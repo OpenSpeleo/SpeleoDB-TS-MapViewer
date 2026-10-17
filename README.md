@@ -1,10 +1,21 @@
 # @speleodb/map-viewer
 
-Shared MapLibre expressions, layer specifications, globe atmosphere, and marker
-assets for the SpeleoDB web and mobile applications. The applications own map
-creation, source registration, renderer lifecycle, network access, and UI state.
-This package has no React, Capacitor, Django, or application singleton
-dependency.
+Shared MapLibre expressions, layer specifications, camera/scheduling mechanisms,
+gesture compatibility, globe atmosphere, and marker assets for the SpeleoDB web
+and mobile applications. The applications own map creation, source registration,
+renderer lifecycle, network access, and UI state. This package has no React,
+Capacitor, Django, or application singleton dependency.
+
+Reuse `createPaintScheduler`, `createViewerUpdateScheduler`,
+`createMapNavigation`, `normalizeGlobeStyle`, and `computeCameraPadding` for
+renderer behavior with explicit app policies. See
+[scheduling and navigation](docs/scheduling-and-navigation.md). The
+[shared ownership boundary](docs/shared-boundaries.md) explains app policies,
+data contracts and remaining extraction criteria. The isolated
+`tooling/maplibre-gestures` entry owns the guarded engine backport;
+`testing/gestures` owns the browser regression harness. Neither is imported by
+the browser entry. See
+[gesture contracts and release sequencing](docs/gestures.md).
 
 Import expression/layer builders from `@speleodb/map-viewer`, icon URLs from
 `@speleodb/map-viewer/icons`, and assets through
@@ -49,6 +60,10 @@ Individual checks are available as `bun run lint`, `bun run format:check`,
 `bun run lint:fix` or `bun run format` to apply fixes. The lockfile check uses a
 temporary standalone directory so the parent workspace cannot hide missing or
 stale dependencies. CI also runs unit tests and checks package contents.
+
+`bun run test` runs the configured Vitest suite; `bun test` selects Bun's
+separate built-in test runner. CI runs both commands to verify the complete
+library suite with both runners.
 
 Package exports point directly to `src/*.ts`, including type exports. Bun can
 execute these sources; web and mobile compile them in their normal Vite builds.

@@ -1,16 +1,25 @@
 # Rendering ownership
 
 This package holds rendering behavior shared by SpeleoDB's web and mobile apps.
-It produces GL layer specifications and expressions without constructing maps,
-fetching resources or owning framework lifecycle. The web adapter applies the
-specifications imperatively; mobile binds them through `react-map-gl` with every
-`Layer` directly under its owning `Source`.
+It produces GL layer specifications, expressions and reusable camera/scheduling
+mechanisms without constructing maps, fetching resources or owning framework
+lifecycle. The web adapter applies the specifications imperatively; mobile binds
+them through `react-map-gl` with every `Layer` directly under its owning
+`Source`.
 
 Source IDs, geometry revisions, source lifetime, visibility intent, ordering,
-camera effects, authentication and persistence belong to the consumer. Common
-builders accept those identities and policies explicitly. They never branch on
-an application name. Vector builders support both per-record and aggregate
-sources without changing geometry or requiring a shared source registry.
+camera intent policy, authentication and persistence belong to the consumer.
+Common builders accept those identities and policies explicitly. They never
+branch on an application name. Vector builders support both per-record and
+aggregate sources without changing geometry or requiring a shared source
+registry.
+
+[Scheduling and navigation](scheduling-and-navigation.md) defines the shared
+paint boundary, keyed update queue, camera-intent ownership, globe style
+normalization and visible-viewport padding. Applications supply configuration,
+DOM measurements and lifecycle wiring. [Gesture correctness](gestures.md)
+defines the engine backport and common browser measurement/input harness.
+Tooling and testing use separate entrypoints and stay outside browser imports.
 
 The line-width interpolation and zero-simplification source policy are shared.
 Apps retain close-up widths and any overview offset. Depth color construction

@@ -63,23 +63,44 @@ function data(...properties: Record<string, unknown>[]): FeatureCollection {
   };
 }
 
+// Restore descriptors explicitly: Bun's Vitest API has no stubGlobal helpers.
+const originalGlobals = new Map<string, PropertyDescriptor | undefined>();
 beforeEach(() => {
   FakeImage.instances = [];
-  vi.stubGlobal("Image", FakeImage);
-  vi.stubGlobal("document", {
-    createElement: () => ({
-      getContext: () => ({
-        drawImage: vi.fn(),
-        getImageData: () => {
-          const rgba = new Uint8ClampedArray(96 * 96 * 4);
-          rgba[(48 * 96 + 48) * 4 + 3] = 255;
-          return { data: rgba };
-        },
+  const globals = {
+    Image: FakeImage,
+    document: {
+      createElement: () => ({
+        getContext: () => ({
+          drawImage: vi.fn(),
+          getImageData: () => {
+            const rgba = new Uint8ClampedArray(96 * 96 * 4);
+            rgba[(48 * 96 + 48) * 4 + 3] = 255;
+            return { data: rgba };
+          },
+        }),
       }),
-    }),
-  });
+    },
+  };
+  for (const [name, value] of Object.entries(globals)) {
+    originalGlobals.set(
+      name,
+      Object.getOwnPropertyDescriptor(globalThis, name),
+    );
+    Object.defineProperty(globalThis, name, {
+      configurable: true,
+      writable: true,
+      value,
+    });
+  }
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  for (const [name, descriptor] of originalGlobals) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+    else Reflect.deleteProperty(globalThis, name);
+  }
+  originalGlobals.clear();
+});
 
 describe("shared landmark image lifecycle", () => {
   it("decodes one mask per icon, deduplicates normalized colors and creates real color pixels with contrast halos", async () => {
