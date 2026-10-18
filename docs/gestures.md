@@ -9,91 +9,73 @@ camera initialization, lifecycle, authentication and native-service integration.
 
 ## Requested camera transform defects
 
-MapLibre 6.10.0 retains a requested camera transform when a camera update
+Stock MapLibre 6.14.0 retains a requested camera transform when a camera update
 callback is installed. `react-map-gl` installs that callback even for an
 uncontrolled map. Rendering updates the live transform's projection transition
 but leaves the requested transform at its old projection. Gesture calculations
 then use globe math against Mercator coordinates or the reverse. Straight drags
 can become mostly stationary or drift sideways. Zooming can temporarily restore
-agreement. This affects mouse input in the mobile app's desktop browser as well
-as touch input; accelerometer and device orientation are unrelated.
+agreement. A plain MapLibre map with a no-op `transformCameraUpdate` callback
+also reproduces this defect, without React or survey data. Accelerometer and
+device orientation are unrelated. Tracked upstream as
+[#8808](https://github.com/maplibre/maplibre-gl-js/issues/8808).
 
-A second 6.10.0 defect retains the requested transform after non-inertial
-gestures: HandlerManager emits movement events directly on Map, bypassing
-Camera's `moveend` cleanup listener. Inertial animation sometimes clears it,
-making release timing and motion preferences relevant. GeoJSON replacement
-changes timing but is not required to reproduce either defect.
+MapLibre 6.11.1 fixed Camera event ownership through
+[upstream PR #8471](https://github.com/maplibre/maplibre-gl-js/pull/8471). Its
+movement events now reach Camera's `moveend` cleanup listener. Both apps and
+this package develop against 6.14.0, so the old 6.10.0 event-routing correction
+is removed. Cleanup between gestures does not synchronize projection state
+during an uninterrupted pinch. The direct web viewer does not install a camera
+update callback, but uses the same corrected renderer as mobile.
 
-The direct MapLibre 6.14.0 web viewer does not install a camera update callback
-and did not reproduce that projection corruption in its private or public mouse
-entrypoints. 6.14.0 corrects event ownership, but installing a callback can
-still expose the requested-projection mismatch during an uninterrupted pinch. An
-upgrade alone does not prove both defects fixed.
+A second remaining defect affects partial pinch release in 6.14.0. A symmetric
+pinch can end its zoom event while TouchPan still retains one finger. The engine
+starts zoom inertia because no movement event remains. When that animation
+naturally ends, Camera stops all handlers, losing the held contact. Its next
+move is then ignored. Normal motion and the time between input events make this
+intermittent; reduced motion can hide it. Waiting for actual DOM contact
+delivery proved this failure persisted after input reached the renderer. Tracked
+upstream as [#8809](https://github.com/maplibre/maplibre-gl-js/issues/8809).
 
-A third defect affects partial pinch release in both 6.10.0 and 6.14.0. A
-symmetric pinch can end its zoom event while TouchPan still retains one finger.
-The engine starts zoom inertia because no movement event remains. When that
-animation naturally ends, Camera stops all handlers, losing the held contact.
-Its next move is then ignored. Normal motion and the time between input events
-make this intermittent; reduced motion can hide it. Waiting for actual DOM
-contact delivery proved this failure persisted after input reached the renderer.
+The fork suppresses end inertia and north-snapping while TouchPan still owns a
+contact and clears the obsolete velocity buffer. North-snapping near a nonzero
+bearing can otherwise reset the held contact even after inertia is suppressed.
+Normal zoomend/moveend cleanup remains; fully released gestures retain normal
+inertia. The regression holds one finger after a pinch, waits for public
+`isMoving()` to settle without resetting the camera, checks `dragPan.isActive()`
+and then measures the first 4-pixel sample and the complete 48-pixel
+translation. This failed before the correction.
 
-The shared fix suppresses end inertia while TouchPan still owns a contact and
-clears the obsolete velocity buffer. Normal zoomend/moveend cleanup remains;
-fully released gestures retain normal inertia. The regression holds one finger
-after a pinch, waits for public `isMoving()` to settle without resetting the
-camera, checks `dragPan.isActive()` and then measures the first 4-pixel sample
-and the complete 48-pixel translation. This failed before the correction.
+## Fork ownership and installation
 
-## Explicit installation backport
+Mobile, web and this package declare
+`github:DEKHTIARJonathan/maplibre-gl-js#hotpatch`. The
+[hotpatch branch](https://github.com/DEKHTIARJonathan/maplibre-gl-js/tree/hotpatch)
+keeps package version 6.14.0 and applies the fixes from upstream
+[PR #8810](https://github.com/maplibre/maplibre-gl-js/pull/8810) and
+[PR #8811](https://github.com/maplibre/maplibre-gl-js/pull/8811), including the
+remaining-contact north-snap correction. Runtime behavior is fixed in the
+renderer source before its bundles are built.
 
-`patchMapLibre(packageRoot)` from
-`@speleodb/map-viewer/tooling/maplibre-gestures` owns exact-version backports
-for 6.10.0 and 6.14.0. Its source-equivalent corrections are:
+The branch must ship the compiled main and worker modules, CSS, declarations and
+source maps consumed by applications. Consumers install these artifacts without
+running MapLibre development or patch scripts. There is no MapLibre postinstall
+wrapper, Vite patch hook, artifact rewriting or patch-hash migration in
+SpeleoDB. The generic `tooling/package-patch` helper remains for unrelated
+mobile native dependency fixes.
 
-```ts
-// Map._render: synchronize both transforms' projection context.
-this._camera.transform.setTransitionState(
-  this.style.projection?.transitionState,
-);
-this._camera._requestedCameraState?.setTransitionState(
-  this.style.projection?.transitionState,
-);
+Rendering synchronizes both the live and requested transforms' projection state.
+Gesture completion clears stale inertia and suppresses north-snapping while
+TouchPan owns a contact. Upstream Camera events still propagate once; fully
+released pans retain normal inertia and snapping. The React camera callback,
+globe projection and native MapLibre gesture handlers remain in use. No survey
+scan or extra application work is added per pointer event.
 
-// HandlerManager in 6.10.0: both _fireEvent and direct non-inertial moveend.
-this._camera.fire(new MapMovementEvent(/* existing event arguments */));
-
-// HandlerManager in both versions: do not animate away a held contact.
-const inertialEase = this._handlersById.touchPan.isActive()
-  ? (this._inertia.clear(), undefined)
-  : this._inertia._onMoveEnd(this._map.dragPan._inertiaOptions);
-```
-
-Camera events propagate to Map once. The fix retains the React camera callback,
-globe projection, natural inertia and MapLibre gesture handlers. It adds one
-guarded call per render, without scanning survey data or adding application work
-per pointer event. Applications do not mutate private renderer state at runtime
-or reset the camera to recover a gesture.
-
-The installer checks the exact version and original/patched SHA-256 hashes of
-both development and production ESM artifacts and maps before any write. It
-composes source maps, atomically replaces files without modifying Bun's
-hardlinked package cache, and resumes a partially applied patch. Unknown
-versions or contents fail closed. The upstream TypeScript sources remain
-original; the patch targets the ESM artifacts actually consumed by Vite.
-
-The package never applies the patch automatically. Mobile invokes it from its
-postinstall wrapper and Vite configuration, which also covers existing workspace
-installs that skip a changed lifecycle script. Web invokes the same entry from
-postinstall and Vite for its 6.14.0 partial-release correction; it does not
-receive the 6.10.0-specific edits. `writePackagePatch` in the sibling
-`tooling/package-patch` entry provides the same atomic cache-safe replacement
-for consumer-owned installation patches.
-
-Tooling imports Node-compatible filesystem APIs, MagicString and remapping.
-These entries are separate from the browser entry; application bundles must
-never import them. An engine upgrade must remove or rebase the guarded backport
-and pass the same behavioral tests.
+Frozen lockfiles pin a concrete fork commit even though manifests name the
+branch. Update the mobile, web and map-viewer standalone locks, the root
+integration lock and the web overlay lock together. Confirm a clean install
+resolves the fork and contains usable distribution files, then run the existing
+behavioral suites before advancing the pinned commit.
 
 ## Shared browser contract
 
@@ -141,18 +123,17 @@ include the paused partial-release regression. Shared package tests verify the
 measurement oracle and event contract; they do not substitute for these browser
 runs.
 
-Artifact tests verify hash admission, source-map locations, idempotence, partial
-installation recovery, preflight failure and cache isolation. Run the package's
-lint, typecheck, test, build, lockfile and package-content checks, then both app
-browser suites. Before release, also verify supported physical Android and iOS
-devices through pinch, translation, handoff, release/re-grab and app suspension
-with survey refreshes in progress. Record OS/WebView and build identity.
+Run the package's lint, typecheck, test, build, lockfile and package-content
+checks, then both app browser suites. Before release, also verify supported
+physical Android and iOS devices through pinch, translation, handoff,
+release/re-grab and app suspension with survey refreshes in progress. Record
+OS/WebView and build identity.
 
 ## Distribution
 
-New tooling, testing and behavior exports require a new map-viewer release.
-Publish and verify that shared version before advancing application exact pins
-and standalone locks, then refresh integration and web-overlay locks. A local
-workspace or packed candidate proves implementation compatibility, not the
-presence of these exports in the previously published `0.2.0` package. Keep
-release actions separate from local implementation and validation.
+Renderer corrections ship with the fork, independently of map-viewer releases.
+The published map-viewer 0.3.0 already supplies the shared browser testing and
+map-created event exports used by both apps. Applications no longer import its
+obsolete gesture patch tooling. A future stock MapLibre upgrade must include
+both upstream fixes and pass the same regression suites before replacing the
+fork dependency.

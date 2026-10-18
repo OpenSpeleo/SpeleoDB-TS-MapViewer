@@ -12,10 +12,9 @@ renderer behavior with explicit app policies. See
 [scheduling and navigation](docs/scheduling-and-navigation.md). The
 [shared ownership boundary](docs/shared-boundaries.md) explains app policies,
 data contracts and remaining extraction criteria. The isolated
-`tooling/maplibre-gestures` entry owns the guarded engine backport;
-`testing/gestures` owns the browser regression harness. Neither is imported by
-the browser entry. See
-[gesture contracts and release sequencing](docs/gestures.md).
+`testing/gestures` entry owns the browser regression harness and is not imported
+by the browser entry. Renderer fixes live in the MapLibre fork. See
+[gesture contracts and renderer distribution](docs/gestures.md).
 
 Import expression/layer builders from `@speleodb/map-viewer`, icon URLs from
 `@speleodb/map-viewer/icons`, and assets through
@@ -24,9 +23,12 @@ Import expression/layer builders from `@speleodb/map-viewer`, icon URLs from
 behavioral boundaries. Core domain calculations belong to `@speleodb/map-core`.
 Attach the shared dark space, stars and white globe halo with
 `attachGlobeAtmosphere(map)` and call its disposer when the map owner unmounts.
-Mobile supplies MapLibre 6.10.0 and web supplies 6.14.0 through explicit
-dependencies. This package supports MapLibre `>=6.10.0 <7.0.0` and does not
-bundle a second renderer.
+Mobile, web and this package use MapLibre 6.14.0 from
+[`DEKHTIARJonathan/maplibre-gl-js#hotpatch`](https://github.com/DEKHTIARJonathan/maplibre-gl-js/tree/hotpatch).
+The fork contains the projection and pinch-release fixes; frozen locks pin its
+resolved commit. The MapLibre peer range remains `>=6.14.0 <7.0.0`, and this
+package does not bundle a second renderer or modify installed renderer files.
+Renderer updates must pass the gesture regression suites.
 
 GIS alias points from `@speleodb/map-core/geometry-labels` are rendered with
 `createGeometryLabelLayer`. It centers polygon labels and places horizontal line
