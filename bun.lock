@@ -5,7 +5,7 @@
     "": {
       "name": "@speleodb/map-viewer",
       "dependencies": {
-        "@speleodb/map-core": ">=0.3.0 <1.0.0",
+        "@speleodb/map-core": ">=0.5.0 <1.0.0",
       },
       "devDependencies": {
         "@eslint/js": "9.39.5",
@@ -119,7 +119,7 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@speleodb/map-core": ["@speleodb/map-core@0.4.0", "", { "dependencies": { "@types/geojson": "7946.0.16", "@types/polylabel": "2.0.0", "polylabel": "2.1.0" } }, "sha512-dvkKlkpvWCWegsE3gA+H4+OQvbB8ECsizmVU5RVcfP0O+iU3bodP1OV5STmT7Bx30xmmoPz/u4kusYeynp7YGA=="],
+    "@speleodb/map-core": ["@speleodb/map-core@0.5.0", "", { "dependencies": { "@types/geojson": "7946.0.16", "@types/polylabel": "2.0.0", "polylabel": "2.1.0" } }, "sha512-NJZBCRRrOqVvXDa8w99FrbVCvQRYZ9q+zo30c1Dg5+h9zCYEGJzwcXdUyy52jHZPaxJroPFr65ibkf7ddoPO4g=="],
 
     "@types/chai": ["@types/chai@5.2.3", "", { "dependencies": { "@types/deep-eql": "*", "assertion-error": "^2.0.1" } }, "sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA=="],
 
