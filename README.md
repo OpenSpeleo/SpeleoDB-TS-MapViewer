@@ -21,6 +21,8 @@ Import expression/layer builders from `@speleodb/map-viewer`, icon URLs from
 `@speleodb/map-viewer/assets/*`. See
 [rendering contracts and ownership](docs/rendering.md) for the API design and
 behavioral boundaries. Core domain calculations belong to `@speleodb/map-core`.
+`MAP_LAYER_MIN_ZOOM` owns all layer visibility thresholds for both applications;
+shared builders apply it directly and app-owned layers import the same table.
 Attach the shared dark space, stars and white globe halo with
 `attachGlobeAtmosphere(map)` and call its disposer when the map owner unmounts.
 Mobile, web and this package use MapLibre 6.14.0 from
@@ -45,6 +47,13 @@ artwork loads or the style changes; it must not recursively call `prepare`. Call
 CSS masks colored with the landmark collection color. All five choices,
 including the default triangle, use the same image sizing and contrast halo. The
 original triangle glyph remains a fallback while artwork is unavailable.
+
+## Exploration lead directions
+
+The shared [exploration lead compass and cone](docs/exploration-leads.md)
+provide up to three saved directions. The cone layer builder is exported at the
+package root; the DOM compass has the explicit `heading-compass` subpath and no
+framework dependency.
 
 ## Development and distribution
 

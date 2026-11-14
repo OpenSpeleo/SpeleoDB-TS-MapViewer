@@ -28,6 +28,38 @@ and fallback: different current depth semantics remain visible in app code.
 Shared filters normalize numeric feature IDs and the historical null/missing
 sensor category; category and project gates compose without copying GeoJSON.
 
+All layer visibility thresholds live in `MAP_LAYER_MIN_ZOOM`, exported from this
+package and defined in `src/visibility.ts`. Web and mobile use the same values:
+
+| Layer                                       | Minimum zoom            |
+| ------------------------------------------- | ----------------------- |
+| Raster basemaps                             | 0                       |
+| GIS geometry and aliases                    | 0                       |
+| Offline download areas                      | 0                       |
+| Project survey lines                        | 0                       |
+| Project line labels                         | 14                      |
+| Cave entrance stars                         | 10                      |
+| Landmarks                                   | 12 (marker), 16 (label) |
+| Surface stations                            | 12 (marker), 16 (label) |
+| Subsurface stations                         | 12 (marker), 16 (label) |
+| Safety cylinders                            | 12 (marker), 16 (label) |
+| Exploration lead icons, fallbacks and cones | 15                      |
+| GPS track lines                             | 0                       |
+
+Shared marker and cone builders apply these values directly. App-owned project,
+GPS, cylinder and lead marker adapters import the same table. There are no
+app-local visibility thresholds or builder overrides. Marker/label sizes, camera
+navigation and offline tile ranges remain separate settings with their own
+responsibilities. No new layer type is introduced where an app does not already
+render it. This makes a threshold change apply to both viewers without
+duplicating configuration or adding per-feature computation.
+
+Regression coverage exercises the generated layer thresholds alongside source
+binding, category/project visibility and icon fallback behavior. See
+[exploration lead directions](exploration-leads.md) for cone-specific behavior.
+Assertions and fixtures import the relevant `MAP_LAYER_MIN_ZOOM` keys rather
+than copying numbers, so tuning a threshold requires editing only its owner.
+
 Seven identical map icons are distributed under `assets/`. The explicit `icons`
 entry resolves their bundled URLs; callers own registration, error handling and
 style reload. Importing expression/specification helpers does not initialize a

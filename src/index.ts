@@ -1,5 +1,6 @@
 export * from "./expressions.js";
 export * from "./layers.js";
+export * from "./visibility.js";
 export * from "./atmosphere.js";
 export * from "./landmark-style.js";
 export * from "./map-events.js";
@@ -7,3 +8,4 @@ export * from "./camera-padding.js";
 export * from "./navigation.js";
 export * from "./style.js";
 export * from "./update-scheduler.js";
+export * from "./exploration-leads.js";

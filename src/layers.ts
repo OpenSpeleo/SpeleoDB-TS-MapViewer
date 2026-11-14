@@ -16,6 +16,7 @@ import {
   LANDMARK_ICON_CONTENT_SIZE,
   landmarkIconImageExpression,
 } from "./landmark-style.js";
+import { MAP_LAYER_MIN_ZOOM } from "./visibility.js";
 
 type Color = DataDrivenPropertyValueSpecification<string>;
 type Size = DataDrivenPropertyValueSpecification<number>;
@@ -52,6 +53,7 @@ export function createVectorOverlayLayers({
     id: layerIds.fill,
     source,
     type: "fill",
+    minzoom: MAP_LAYER_MIN_ZOOM.GIS_GEOMETRY,
     filter: filterForGeometry("Polygon"),
     paint: { "fill-color": color, "fill-opacity": fillOpacity },
   };
@@ -59,6 +61,7 @@ export function createVectorOverlayLayers({
     id: layerIds.outline,
     source,
     type: "line",
+    minzoom: MAP_LAYER_MIN_ZOOM.GIS_GEOMETRY,
     filter: filterForGeometry("Polygon"),
     layout: outlineLayout,
     paint: {
@@ -71,6 +74,7 @@ export function createVectorOverlayLayers({
     id: layerIds.line,
     source,
     type: "line",
+    minzoom: MAP_LAYER_MIN_ZOOM.GIS_GEOMETRY,
     filter: filterForGeometry("LineString"),
     layout: GEOJSON_LINE_LAYOUT,
     paint: {
@@ -85,6 +89,7 @@ export function createVectorOverlayLayers({
       id: layerIds.point,
       source,
       type: "circle",
+      minzoom: MAP_LAYER_MIN_ZOOM.GIS_GEOMETRY,
       filter: filterForGeometry("Point"),
       paint: {
         "circle-color": color,
@@ -98,8 +103,6 @@ export function createVectorOverlayLayers({
 
 interface LabelOptions {
   sourceId: string;
-  markerMinZoom: number;
-  labelMinZoom: number;
   markerSize: Size;
   labelSize: Size;
   visible?: boolean;
@@ -121,8 +124,6 @@ export function createLandmarkLayers(
     sourceId: source,
     markerId,
     labelId,
-    markerMinZoom,
-    labelMinZoom,
     markerSize,
     labelSize,
     color,
@@ -144,7 +145,7 @@ export function createLandmarkLayers(
       source,
       ...(filter ? { filter } : {}),
       type: "symbol",
-      minzoom: markerMinZoom,
+      minzoom: MAP_LAYER_MIN_ZOOM.LANDMARK_SYMBOL,
       layout: {
         visibility,
         "text-field": availableIconIds.length
@@ -185,7 +186,7 @@ export function createLandmarkLayers(
       source,
       ...(filter ? { filter } : {}),
       type: "symbol",
-      minzoom: labelMinZoom,
+      minzoom: MAP_LAYER_MIN_ZOOM.LANDMARK_LABEL,
       layout: {
         visibility,
         "text-field": ["get", "name"],
@@ -246,6 +247,7 @@ export function createGeometryLabelLayer({
     id,
     source,
     type: "symbol",
+    minzoom: MAP_LAYER_MIN_ZOOM.GIS_GEOMETRY,
     filter: combineFilters(filter, [
       "!=",
       ["coalesce", ["get", "alias"], ""],
@@ -298,8 +300,6 @@ export function createSurfaceStationLayers({
   color,
   markerSize,
   labelSize,
-  markerMinZoom,
-  labelMinZoom,
   visible = true,
   filter,
 }: SurfaceStationLayerOptions): SymbolLayerSpecification[] {
@@ -310,7 +310,7 @@ export function createSurfaceStationLayers({
       source,
       ...(filter ? { filter } : {}),
       type: "symbol",
-      minzoom: markerMinZoom,
+      minzoom: MAP_LAYER_MIN_ZOOM.SURFACE_STATION_SYMBOL,
       layout: {
         visibility,
         "text-field": "◆",
@@ -331,7 +331,7 @@ export function createSurfaceStationLayers({
       source,
       ...(filter ? { filter } : {}),
       type: "symbol",
-      minzoom: labelMinZoom,
+      minzoom: MAP_LAYER_MIN_ZOOM.SURFACE_STATION_LABEL,
       layout: {
         visibility,
         "text-field": ["get", "name"],
@@ -375,8 +375,6 @@ export function createStationLayers({
   markerSize,
   iconSize,
   labelSize,
-  markerMinZoom,
-  labelMinZoom,
   visible = true,
   filter,
   stationTypes,
@@ -387,7 +385,7 @@ export function createStationLayers({
       id: circleId,
       source,
       type: "circle",
-      minzoom: markerMinZoom,
+      minzoom: MAP_LAYER_MIN_ZOOM.SUBSURFACE_STATION_SYMBOL,
       filter: combineFilters(filter, stationTypeFilter("sensor")),
       layout: {
         visibility: visible && stationTypes.sensor ? "visible" : "none",
@@ -407,7 +405,7 @@ export function createStationLayers({
       id: layerId,
       source,
       type: "symbol",
-      minzoom: markerMinZoom,
+      minzoom: MAP_LAYER_MIN_ZOOM.SUBSURFACE_STATION_SYMBOL,
       filter: combineFilters(filter, stationTypeFilter(stationType)),
       layout: {
         visibility: visible && stationTypes[stationType] ? "visible" : "none",
@@ -423,7 +421,7 @@ export function createStationLayers({
     id: labelId,
     source,
     type: "symbol",
-    minzoom: labelMinZoom,
+    minzoom: MAP_LAYER_MIN_ZOOM.SUBSURFACE_STATION_LABEL,
     filter: combineFilters(filter, stationTypesFilter(stationTypes)),
     layout: {
       visibility: visible ? "visible" : "none",

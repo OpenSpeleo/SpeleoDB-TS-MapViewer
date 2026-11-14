@@ -5,6 +5,7 @@ import {
   createSurfaceStationLayers,
   createVectorOverlayLayers,
   GEOJSON_LINE_SOURCE_OPTIONS,
+  MAP_LAYER_MIN_ZOOM,
 } from "@speleodb/map-viewer";
 
 describe("shared layer specifications", () => {
@@ -32,6 +33,11 @@ describe("shared layer specifications", () => {
     expect(layers[0]).toMatchObject({
       filter: ["==", ["geometry-type"], "Polygon"],
     });
+    expect(
+      layers.every(
+        (layer) => layer.minzoom === MAP_LAYER_MIN_ZOOM.GIS_GEOMETRY,
+      ),
+    ).toBe(true);
     expect(GEOJSON_LINE_SOURCE_OPTIONS.tolerance).toBe(0);
   });
 
@@ -78,8 +84,6 @@ describe("shared layer specifications", () => {
       sourceId: "landmarks",
       markerId: "marker",
       labelId: "label",
-      markerMinZoom: 2,
-      labelMinZoom: 8,
       markerSize: 22,
       labelSize: 12,
       color: "#ffffff",
@@ -90,15 +94,24 @@ describe("shared layer specifications", () => {
     expect(layers).toHaveLength(2);
     expect(layers[0]).toMatchObject({
       source: "landmarks",
+      minzoom: MAP_LAYER_MIN_ZOOM.LANDMARK_SYMBOL,
       layout: { visibility: "none", "text-field": "▼", "text-size": 22 },
     });
     expect(layers[1]).toMatchObject({
-      minzoom: 8,
+      minzoom: MAP_LAYER_MIN_ZOOM.LANDMARK_LABEL,
       layout: { "text-offset": [0, 1.5] },
     });
-    expect(
-      createSurfaceStationLayers({ ...options, visible: true })[0],
-    ).toMatchObject({ layout: { visibility: "visible", "text-field": "◆" } });
+    const surfaceLayers = createSurfaceStationLayers({
+      ...options,
+      visible: true,
+    });
+    expect(surfaceLayers[0]).toMatchObject({
+      minzoom: MAP_LAYER_MIN_ZOOM.SURFACE_STATION_SYMBOL,
+      layout: { visibility: "visible", "text-field": "◆" },
+    });
+    expect(surfaceLayers[1]).toMatchObject({
+      minzoom: MAP_LAYER_MIN_ZOOM.SURFACE_STATION_LABEL,
+    });
   });
 
   it("admits only available icons while composing parent visibility and station subtype intent", () => {
@@ -110,8 +123,6 @@ describe("shared layer specifications", () => {
       markerSize: 5,
       iconSize: 1,
       labelSize: 12,
-      markerMinZoom: 14,
-      labelMinZoom: 16,
       stationTypes: { sensor: true, biology: false, bone: true },
       icons: [
         {
@@ -133,6 +144,11 @@ describe("shared layer specifications", () => {
       "sensor",
       "biology",
       "labels",
+    ]);
+    expect(layers.map((layer) => layer.minzoom)).toEqual([
+      MAP_LAYER_MIN_ZOOM.SUBSURFACE_STATION_SYMBOL,
+      MAP_LAYER_MIN_ZOOM.SUBSURFACE_STATION_SYMBOL,
+      MAP_LAYER_MIN_ZOOM.SUBSURFACE_STATION_LABEL,
     ]);
     expect(layers[0]?.layout).toEqual({ visibility: "visible" });
     expect(layers[1]?.layout).toMatchObject({
