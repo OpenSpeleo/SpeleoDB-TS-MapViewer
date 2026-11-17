@@ -1,12 +1,15 @@
 import {
   EXPLORATION_LEAD_MAX_HEADINGS,
-  explorationLeadHeadings,
+  createDefaultExplorationLeadDirections,
+  parseExplorationLeadDirections,
+  type ExplorationLeadDirection,
 } from "@speleodb/map-core";
+import { EXPLORATION_LEAD_CHECKED_COLOR } from "./exploration-leads.js";
 
 export interface HeadingCompassOptions {
-  headings: readonly number[];
+  directions: readonly ExplorationLeadDirection[];
   readOnly?: boolean;
-  onChange?: (headings: number[]) => void;
+  onChange?: (directions: ExplorationLeadDirection[]) => void;
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -25,7 +28,9 @@ export function createHeadingCompass(
 ) {
   const document = container.ownerDocument;
   const id = `lead-compass-${++compassCount}`;
-  let headings = explorationLeadHeadings(options.headings);
+  let directions =
+    parseExplorationLeadDirections(options.directions) ??
+    createDefaultExplorationLeadDirections();
   let readOnly = options.readOnly ?? false;
   let selected = 0;
   let activePointerId: number | null = null;
@@ -49,17 +54,19 @@ export function createHeadingCompass(
 
   const root = document.createElement("div");
   root.style.cssText =
-    "display:grid;justify-items:center;gap:8px;width:100%;color:#e2e8f0;font-size:14px";
+    "position:relative;display:grid;justify-items:center;gap:8px;width:100%;color:#e2e8f0;font-size:14px";
   root.setAttribute("role", "group");
   root.setAttribute("aria-label", "Lead directions");
   const tabBar = document.createElement("div");
   tabBar.style.cssText =
-    "display:grid;grid-template-columns:32px auto 32px;align-items:center;justify-content:center;column-gap:6px;height:36px";
+    "display:flex;align-items:center;justify-content:center;gap:4px;height:36px;min-width:0;max-width:100%";
+  const selector = document.createElement("div");
+  selector.style.cssText =
+    "box-sizing:border-box;display:flex;align-items:stretch;min-width:0;height:36px;padding:1px;border:1px solid #475569;border-radius:7px;background:#0f172a";
   const tabs = document.createElement("div");
   tabs.setAttribute("role", "tablist");
   tabs.setAttribute("aria-label", "Lead directions");
-  tabs.style.cssText =
-    "box-sizing:border-box;grid-column:2;display:flex;align-items:stretch;gap:2px;height:36px;padding:1px;border:1px solid #475569;border-radius:7px;background:#0f172a";
+  tabs.style.cssText = "display:flex;align-items:stretch;min-width:0";
   const panel = document.createElement("div");
   panel.id = `${id}-panel`;
   panel.style.cssText = "display:grid;justify-items:center;gap:4px;width:100%";
@@ -151,9 +158,10 @@ export function createHeadingCompass(
   input.min = "0";
   input.max = "359";
   input.step = "1";
-  input.required = true;
-  input.style.cssText =
-    "box-sizing:content-box;width:3ch;height:34px;padding:0;border:1px solid #64748b;border-radius:6px;background:linear-gradient(180deg,#1e293b,#0f172a);box-shadow:0 2px 6px #02061766,inset 0 1px 0 #ffffff0a;color:#f8fafc;font:inherit;font-size:15px;font-variant-numeric:tabular-nums;text-align:center;appearance:textfield;outline-offset:2px;outline-color:#818cf8";
+  input.required = false;
+  const headingValueStyle =
+    "box-sizing:content-box;width:3ch;height:34px;padding:0;border:1px solid #64748b;border-radius:6px;background:linear-gradient(180deg,#1e293b,#0f172a);box-shadow:0 2px 6px #02061766,inset 0 1px 0 #ffffff0a;color:#f8fafc;font:inherit;font-size:15px;font-variant-numeric:tabular-nums;text-align:center";
+  input.style.cssText = `${headingValueStyle};appearance:textfield;outline-offset:2px;outline-color:#818cf8`;
   editor.append(input);
   editor.onpointerdown = () => {
     activePointerId = null;
@@ -162,15 +170,14 @@ export function createHeadingCompass(
     activePointerId = null;
   };
   const reading = document.createElement("p");
-  reading.style.cssText =
-    "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);margin:0;padding:0 4px;border-radius:6px;background:linear-gradient(180deg,#1e293b,#0f172a);box-shadow:0 2px 6px #02061766,inset 0 1px 0 #ffffff0a;color:#f8fafc;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;line-height:36px;white-space:nowrap;text-align:center";
+  reading.style.cssText = `${headingValueStyle};position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);margin:0;line-height:34px;white-space:nowrap`;
   const empty = document.createElement("p");
   empty.textContent = "No direction set";
   empty.style.cssText =
     "margin:0;color:#94a3b8;font-size:14px;line-height:36px;text-align:center";
 
   function reportValidity() {
-    return readOnly || headings.length === 0 || input.reportValidity();
+    return readOnly || input.reportValidity();
   }
 
   function select(index: number, focusTab = false) {
@@ -184,24 +191,27 @@ export function createHeadingCompass(
     { length: EXPLORATION_LEAD_MAX_HEADINGS },
     (_, index) => {
       const tab = button(`Lead ${index + 1}`, () => select(index));
+      tab.style.cssText +=
+        ";flex:0 1 58px;width:58px;min-width:0;padding:0 3px;font-size:12px;white-space:nowrap;outline-offset:-2px";
       tab.id = `${id}-tab-${index}`;
       tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-label", `Lead ${index + 1}`);
       tab.setAttribute("aria-controls", panel.id);
       tab.onkeydown = (event) => {
-        if (!headings.length) return;
+        if (!directions.length) return;
         let next = index;
         switch (event.key) {
           case "ArrowRight":
-            next = (index + 1) % headings.length;
+            next = (index + 1) % directions.length;
             break;
           case "ArrowLeft":
-            next = (index + headings.length - 1) % headings.length;
+            next = (index + directions.length - 1) % directions.length;
             break;
           case "Home":
             next = 0;
             break;
           case "End":
-            next = headings.length - 1;
+            next = directions.length - 1;
             break;
           default:
             return;
@@ -244,78 +254,154 @@ export function createHeadingCompass(
   function changed() {
     input.setCustomValidity("");
     refresh();
-    options.onChange?.([...headings]);
+    options.onChange?.(directions.map((entry) => ({ ...entry })));
   }
 
   const add = button("+", () => {
     if (
       readOnly ||
-      headings.length >= EXPLORATION_LEAD_MAX_HEADINGS ||
+      (directions.length >= EXPLORATION_LEAD_MAX_HEADINGS &&
+        directions[selected]!.heading !== null) ||
       !reportValidity()
     )
       return;
     activePointerId = null;
-    selected = headings.length;
-    headings.push(DEFAULT_HEADINGS.find((value) => !headings.includes(value))!);
+    const heading = DEFAULT_HEADINGS.find(
+      (value) => !directions.some((entry) => entry.heading === value),
+    )!;
+    if (directions[selected]!.heading === null) {
+      directions[selected]!.heading = heading;
+    } else {
+      selected = directions.length;
+      directions.push({
+        heading,
+        checked: false,
+      });
+    }
     changed();
     input.focus();
   });
   add.setAttribute("aria-label", "Add direction");
   add.title = "Add direction";
   const remove = button("−", () => {
-    if (readOnly || !headings.length) return;
+    if (readOnly || !directions.length) return;
     activePointerId = null;
-    headings.splice(selected, 1);
-    selected = Math.max(0, Math.min(selected, headings.length - 1));
+    if (directions.length === 1) directions[0]!.heading = null;
+    else directions.splice(selected, 1);
+    selected = Math.max(0, Math.min(selected, directions.length - 1));
     changed();
-    (headings.length ? input : add).focus();
+    (directions[selected]!.heading === null ? add : input).focus();
   });
   remove.setAttribute("aria-label", "Remove direction");
   remove.title = "Remove selected direction";
   for (const control of [remove, add]) {
     control.style.cssText +=
-      ";width:32px;height:32px;padding:0;border:1px solid #64748b;border-radius:7px;background:#334155;color:#f8fafc;font-size:22px;font-weight:500";
+      ";flex-shrink:0;width:32px;height:32px;padding:0;border:1px solid #64748b;border-radius:7px;background:#334155;color:#f8fafc;font-size:22px;font-weight:500";
   }
-  remove.style.gridColumn = "1";
-  add.style.gridColumn = "3";
-  tabBar.append(remove, tabs, add);
+  tabBar.append(remove, selector, add);
   dial.append(svg, editor, reading);
   panel.append(dial, empty);
-  root.append(panel, tabBar);
+  selector.append(tabs);
+  const statusPanel = document.createElement("div");
+  statusPanel.style.cssText =
+    "box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;max-width:320px;min-height:52px;margin-top:4px;padding:8px 10px 8px 12px;border:1px solid #334155;border-radius:8px;background:#172235";
+  const statusCopy = document.createElement("div");
+  statusCopy.id = `${id}-status`;
+  statusCopy.style.cssText = "display:grid;gap:2px;min-width:0;line-height:1.3";
+  const statusLead = document.createElement("span");
+  statusLead.style.cssText = "color:#94a3b8;font-size:11px";
+  const statusText = document.createElement("span");
+  statusText.style.cssText = "color:#e2e8f0;font-size:13px;font-weight:500";
+  statusCopy.append(statusLead, document.createTextNode(" "), statusText);
+  const statusControls = document.createElement("div");
+  statusControls.style.cssText =
+    "box-sizing:border-box;display:flex;align-items:stretch;flex-shrink:0;height:34px;border:1px solid #475569;border-radius:6px;background:#334155";
+  const toggleChecked = button("Mark checked", () => {
+    if (readOnly || !reportValidity()) return;
+    activePointerId = null;
+    directions[selected]!.checked = !directions[selected]!.checked;
+    changed();
+  });
+  toggleChecked.setAttribute("aria-describedby", statusCopy.id);
+  toggleChecked.style.cssText +=
+    ";width:104px;height:32px;padding:0 9px;border-radius:5px;background:#334155;color:#f1f5f9;font-size:12px;white-space:nowrap;outline-offset:-2px";
+  toggleChecked.onpointerenter = () => {
+    toggleChecked.style.backgroundColor = "#40516a";
+  };
+  toggleChecked.onpointerleave = () => {
+    toggleChecked.style.backgroundColor = "#334155";
+  };
+  const bulkActions = document.createElement("div");
+  bulkActions.setAttribute("role", "group");
+  bulkActions.setAttribute("aria-label", "All leads");
+  bulkActions.style.cssText = "display:flex;justify-self:end;gap:4px";
+
+  function bulkButton(label: string, checked: boolean) {
+    const control = button(label, () => {
+      if (readOnly || !reportValidity()) return;
+      activePointerId = null;
+      for (const entry of directions) entry.checked = checked;
+      changed();
+    });
+    control.style.cssText +=
+      ";height:24px;padding:0 7px;border:1px solid #64748b;background:#334155;font-size:11px;font-weight:600;white-space:nowrap";
+    control.onpointerenter = () => {
+      if (!control.disabled) control.style.backgroundColor = "#475569";
+    };
+    control.onpointerleave = () => {
+      if (!control.disabled) control.style.backgroundColor = "#334155";
+    };
+    return control;
+  }
+
+  const checkAll = bulkButton("Check all", true);
+  const uncheckAll = bulkButton("Uncheck all", false);
+  bulkActions.append(checkAll, uncheckAll);
+  statusControls.append(toggleChecked);
+  statusPanel.append(statusCopy, statusControls);
+  root.append(bulkActions, panel, tabBar, statusPanel);
   container.append(root);
 
   function refresh() {
-    const hasHeading = headings.length > 0;
+    const hasHeading = directions[selected]!.heading !== null;
     dial.style.display = hasHeading ? "block" : "none";
     empty.hidden = hasHeading;
     empty.style.display = hasHeading ? "none" : "block";
     svg.style.touchAction = readOnly ? "auto" : "none";
     svg.setAttribute("role", readOnly ? "img" : "group");
-    tabBar.style.display = readOnly && !hasHeading ? "none" : "grid";
-    tabs.style.display = hasHeading ? "flex" : "none";
-    panel.setAttribute("role", hasHeading ? "tabpanel" : "region");
-    if (hasHeading) {
-      panel.setAttribute("aria-labelledby", slots[selected]!.tab.id);
-      panel.removeAttribute("aria-label");
-    } else {
-      panel.removeAttribute("aria-labelledby");
-      panel.setAttribute("aria-label", "Lead directions");
-    }
+    tabBar.style.display = "flex";
+    tabs.style.display = "flex";
+    panel.setAttribute("role", "tabpanel");
+    panel.setAttribute("aria-labelledby", slots[selected]!.tab.id);
     slots.forEach(({ tab, handle }, index) => {
-      const heading = headings[index];
-      const exists = heading !== undefined;
+      const entry = directions[index];
+      const heading = entry?.heading;
+      const exists = entry !== undefined;
       const active = exists && index === selected;
       tab.hidden = !exists;
       tab.style.display = exists ? "inline-flex" : "none";
       tab.tabIndex = active ? 0 : -1;
       tab.setAttribute("aria-selected", String(active));
       tab.style.backgroundColor = active ? "#312e81" : "#0f172a";
-      tab.style.color = active ? "#e0e7ff" : "#94a3b8";
-      handle.setAttribute("display", active ? "inline" : "none");
-      handle.setAttribute("aria-hidden", String(!active));
-      handle.setAttribute("tabindex", active && !readOnly ? "0" : "-1");
-      if (!active || readOnly) handle.removeAttribute("role");
-      if (!exists) return;
+      tab.style.color = entry?.checked
+        ? "#86efac"
+        : active
+          ? "#e0e7ff"
+          : "#94a3b8";
+      tab.style.boxShadow = entry?.checked
+        ? `inset 0 -1px ${EXPLORATION_LEAD_CHECKED_COLOR}`
+        : "none";
+      tab.title = `Lead ${index + 1}: ${entry?.checked ? "Checked" : "Unchecked"}`;
+      tab.setAttribute(
+        "aria-description",
+        entry?.checked ? "Checked" : "Unchecked",
+      );
+      const showHandle = active && heading !== null;
+      handle.setAttribute("display", showHandle ? "inline" : "none");
+      handle.setAttribute("aria-hidden", String(!showHandle));
+      handle.setAttribute("tabindex", showHandle && !readOnly ? "0" : "-1");
+      if (!showHandle || readOnly) handle.removeAttribute("role");
+      if (heading === undefined || heading === null) return;
       const roundedHeading = Math.round(heading) % 360;
       handle.setAttribute(
         "transform",
@@ -336,18 +422,54 @@ export function createHeadingCompass(
     input.setAttribute("aria-label", `Direction ${selected + 1} in degrees`);
     input.disabled = readOnly || !hasHeading;
     const displayHeading = hasHeading
-      ? Math.round(headings[selected]!) % 360
+      ? Math.round(directions[selected]!.heading!) % 360
       : null;
     input.value = displayHeading === null ? "" : String(displayHeading);
     reading.hidden = !readOnly || !hasHeading;
     reading.style.display = reading.hidden ? "none" : "block";
     reading.setAttribute("aria-label", `Direction ${selected + 1} in degrees`);
-    reading.textContent = displayHeading === null ? "" : `${displayHeading}°`;
+    reading.textContent = displayHeading === null ? "" : String(displayHeading);
+    const isChecked = directions[selected]!.checked;
+    statusLead.textContent = `Lead ${selected + 1}`;
+    statusText.textContent = isChecked ? "Checked" : "Unchecked";
+    statusText.style.color = isChecked ? "#86efac" : "#e2e8f0";
+    statusCopy.style.display = readOnly ? "flex" : "grid";
+    statusCopy.style.justifyContent = "space-between";
+    statusCopy.style.alignItems = "center";
+    statusCopy.style.flex = "1";
+    statusPanel.hidden = readOnly;
+    statusPanel.style.display = readOnly ? "none" : "flex";
+    statusControls.hidden = readOnly;
+    statusControls.style.display = readOnly ? "none" : "flex";
+    bulkActions.hidden = readOnly || directions.length === 1;
+    bulkActions.style.display = bulkActions.hidden ? "none" : "flex";
+    toggleChecked.textContent = isChecked ? "Mark unchecked" : "Mark checked";
+    toggleChecked.title = `Mark Lead ${selected + 1} ${isChecked ? "unchecked" : "checked"}`;
+    toggleChecked.disabled = readOnly;
+    checkAll.hidden = uncheckAll.hidden = bulkActions.hidden;
+    checkAll.disabled = readOnly || directions.every((entry) => entry.checked);
+    uncheckAll.disabled =
+      readOnly || directions.every((entry) => !entry.checked);
+    for (const control of [checkAll, uncheckAll]) {
+      control.style.backgroundColor = control.disabled ? "#1e293b" : "#334155";
+      control.style.borderColor = control.disabled ? "#334155" : "#64748b";
+      control.style.color = control.disabled ? "#64748b" : "#f8fafc";
+      control.style.cursor = control.disabled ? "default" : "pointer";
+    }
+    add.setAttribute(
+      "aria-label",
+      !hasHeading ? "Set direction" : "Add direction",
+    );
+    add.title = !hasHeading ? "Set direction" : "Add direction";
+    remove.title =
+      directions.length === 1 ? "Clear direction" : "Remove selected direction";
     add.hidden = readOnly;
-    add.disabled = readOnly || headings.length >= EXPLORATION_LEAD_MAX_HEADINGS;
+    add.disabled =
+      readOnly ||
+      (directions.length >= EXPLORATION_LEAD_MAX_HEADINGS && hasHeading);
     add.style.display = add.hidden ? "none" : "inline-flex";
     remove.hidden = readOnly;
-    remove.disabled = readOnly || !hasHeading;
+    remove.disabled = readOnly || (directions.length === 1 && !hasHeading);
     remove.style.display = remove.hidden ? "none" : "inline-flex";
     for (const control of [remove, add]) {
       control.style.backgroundColor = control.disabled
@@ -366,14 +488,20 @@ export function createHeadingCompass(
   }
 
   input.onchange = () => {
-    if (readOnly || !headings.length) return;
+    if (readOnly || !directions.length) return;
+    if (input.value === "" && !input.validity.badInput) {
+      directions[selected]!.heading = null;
+      changed();
+      add.focus();
+      return;
+    }
     const value = input.valueAsNumber;
     if (!Number.isInteger(value) || value < 0 || value >= 360) {
       input.setCustomValidity("Enter a whole number from 0 to 359 degrees.");
       input.reportValidity();
       return;
     }
-    headings[selected] = value;
+    directions[selected]!.heading = value;
     changed();
   };
   function setFromPointer(event: PointerEvent) {
@@ -384,13 +512,13 @@ export function createHeadingCompass(
     if (Math.hypot(x, y) < 5) return;
     const heading =
       (Math.round((Math.atan2(x, -y) * 180) / Math.PI) + 360) % 360;
-    headings[selected] = heading;
+    directions[selected]!.heading = heading;
     changed();
   }
   svg.onpointerdown = (event) => {
     if (
       readOnly ||
-      !headings.length ||
+      !directions.length ||
       event.button !== 0 ||
       activePointerId !== null
     )
@@ -412,7 +540,7 @@ export function createHeadingCompass(
     if (event.pointerId === activePointerId) activePointerId = null;
   };
   svg.onkeydown = (event) => {
-    if (readOnly || !headings.length) return;
+    if (readOnly || !directions.length) return;
     const handle = (event.target as Element).closest("[data-heading-index]");
     if (
       !handle ||
@@ -422,17 +550,20 @@ export function createHeadingCompass(
       return;
     event.preventDefault();
     const delta = ["ArrowRight", "ArrowUp"].includes(event.key) ? 1 : -1;
-    headings[selected] = (Math.round(headings[selected]!) + delta + 360) % 360;
+    directions[selected]!.heading =
+      (Math.round(directions[selected]!.heading!) + delta + 360) % 360;
     changed();
   };
   refresh();
   return {
     reportValidity,
-    update(value: Pick<HeadingCompassOptions, "headings" | "readOnly">) {
+    update(value: Pick<HeadingCompassOptions, "directions" | "readOnly">) {
       activePointerId = null;
-      headings = explorationLeadHeadings(value.headings);
+      directions =
+        parseExplorationLeadDirections(value.directions) ??
+        createDefaultExplorationLeadDirections();
       if (value.readOnly !== undefined) readOnly = value.readOnly;
-      selected = Math.max(0, Math.min(selected, headings.length - 1));
+      selected = Math.max(0, Math.min(selected, directions.length - 1));
       input.setCustomValidity("");
       refresh();
     },
